@@ -231,35 +231,35 @@ EPOCH_PRESETS = {
     "epoch1": {
         "phase": "basic",
         "dataset": "train_test_dataset/normalized/basic.json",
-        "learning_rate": 5e-7,  # Bardzo ostrożny start
+        "learning_rate": 2e-5,  # MLP jest stabilniejsze, można użyć wyższego LR
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch2": {
         "phase": "basic",
         "dataset": "train_test_dataset/normalized/basic.json",
-        "learning_rate": 1e-6,
+        "learning_rate": 2e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch3": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 2e-6,
+        "learning_rate": 3e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch4": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 3e-6,
+        "learning_rate": 3e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch5": {
         "phase": "advanced",
         "dataset": "train_test_dataset/normalized/advanced.json",
-        "learning_rate": 5e-6,  # Docelowy LR
+        "learning_rate": 2e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
@@ -312,27 +312,27 @@ PHASE_CONFIG = {
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
-        "lr": 5e-6,
+        "lr": 2e-5,  # Wyższy LR dla MLP (stabilniejsze niż lm_head)
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],
+        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
     },
     "grammar": {
         "max_length": 384,
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
-        "lr": 5e-6,
+        "lr": 3e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],  # Tylko lm_head dla stabilności
+        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
     },
     "advanced": {
         "max_length": 512,
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
-        "lr": 5e-6,
+        "lr": 2e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],  # Tylko lm_head dla stabilności
+        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
     },
 }
 
@@ -351,8 +351,8 @@ LR = float(
     )
 )
 MAX_GRAD_NORM = float(os.environ.get("MAX_GRAD_NORM", str(PHASE.get("max_grad_norm", 1.0))))
-WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.01"))  # Minimalny warmup (1%)
-LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "constant_with_warmup")  # Stały LR po rozgrzewce
+WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.03"))  # 3% warmup
+LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "cosine")  # Cosine scheduler (bezpieczny z MLP)
 GRAD_PROBE_STEPS = int(os.environ.get("GRAD_PROBE_STEPS", "0"))
 
 LORA_R = 4
@@ -373,8 +373,13 @@ LOCAL_DATASET_PATH = _env_dataset or (
     ACTIVE_EPOCH_PRESET["dataset"] if ACTIVE_EPOCH_PRESET else str(DEFAULT_LOCAL_DATASET)
 )
 
-# BEZPIECZNE: Tylko lm_head dla modelu "thinking" - nie modyfikuj self_attn!
-SAFE_TARGET_MODULES = ["lm_head"]
+# BEZPIECZNE: MLP w ostatniej warstwie (nie lm_head - jest powiązany z embeddingami!)
+# Dla modelu 40-warstwowego używamy warstwy 39 (ostatniej)
+SAFE_TARGET_MODULES = [
+    "model.layers.39.mlp.gate_proj",
+    "model.layers.39.mlp.up_proj",
+    "model.layers.39.mlp.down_proj",
+]
 
 SEED = 42
 
