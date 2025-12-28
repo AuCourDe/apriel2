@@ -314,7 +314,11 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 2e-5,  # Wyższy LR dla MLP (stabilniejsze niż lm_head)
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],
+        "target_modules": [
+            "model.language_model.layers.47.mlp.gate_proj",
+            "model.language_model.layers.47.mlp.up_proj",
+            "model.language_model.layers.47.mlp.down_proj",
+        ],
     },
     "grammar": {
         "max_length": 384,
@@ -323,7 +327,11 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 3e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],
+        "target_modules": [
+            "model.language_model.layers.47.mlp.gate_proj",
+            "model.language_model.layers.47.mlp.up_proj",
+            "model.language_model.layers.47.mlp.down_proj",
+        ],
     },
     "advanced": {
         "max_length": 512,
@@ -332,7 +340,11 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 2e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["lm_head"],
+        "target_modules": [
+            "model.language_model.layers.47.mlp.gate_proj",
+            "model.language_model.layers.47.mlp.up_proj",
+            "model.language_model.layers.47.mlp.down_proj",
+        ],
     },
 }
 
@@ -373,9 +385,13 @@ LOCAL_DATASET_PATH = _env_dataset or (
     ACTIVE_EPOCH_PRESET["dataset"] if ACTIVE_EPOCH_PRESET else str(DEFAULT_LOCAL_DATASET)
 )
 
-# BEZPIECZNE: lm_head z wyłączeniem embedding layer flag
-# Dla vision-language model używamy pełnej ścieżki
-SAFE_TARGET_MODULES = ["lm_head"]
+# BEZPIECZNE: MLP ostatniej warstwy (47) - unika problemu z tied embeddings
+# lm_head ma tie_word_embeddings=True co powoduje niestabilność
+SAFE_TARGET_MODULES = [
+    "model.language_model.layers.47.mlp.gate_proj",
+    "model.language_model.layers.47.mlp.up_proj",
+    "model.language_model.layers.47.mlp.down_proj",
+]
 
 SEED = 42
 
