@@ -199,6 +199,18 @@ def backup_adapter(output_dir: str, epoch_name: str):
     print(f"💾 Wykonano backup adaptera do: {backup_dir}")
 
 
+def adapter_artifacts_present(path: Path) -> bool:
+    if not path.exists() or not path.is_dir():
+        return False
+    known_files = {
+        "adapter_config.json",
+        "adapter_model.safetensors",
+        "adapter_model.bin",
+        "pytorch_model.bin",
+    }
+    return any((path / name).exists() for name in known_files)
+
+
 def resolve_lora_targets(model, phase: str, layer_count: int) -> List[str]:
     if phase == "basic":
         return ["lm_head"]
@@ -274,7 +286,7 @@ HF_DATASET_REPO = os.environ.get("HF_DATASET_REPO", "").strip()
 HF_DATASET_FILE = os.environ.get("HF_DATASET_FILE", "").strip()
 AUTO_NAME_HF_REPO = os.environ.get("AUTO_NAME_HF_REPO", "").lower() in {"1", "true", "yes"}
 HF_LORA_OWNER = os.environ.get("HF_LORA_OWNER", "").strip()
-AQUIRE_EXISTING_ADAPTER = os.environ.get("LOAD_EXISTING_ADAPTER", "").lower() in {"1", "true", "yes"}
+LOAD_EXISTING_ADAPTER = os.environ.get("LOAD_EXISTING_ADAPTER", "").lower() in {"1", "true", "yes"}
 BACKUP_ADAPTER = os.environ.get("BACKUP_ADAPTER", "").lower() in {"1", "true", "yes"}
 SANITY_STRICT = os.environ.get("SANITY_STRICT", "1").lower() in {"1", "true", "yes"}
 ENABLE_DATA_PARALLEL = os.environ.get("ENABLE_DATA_PARALLEL", "").lower() in {"1", "true", "yes"}
@@ -800,6 +812,21 @@ def main():
     )
 
     model = get_peft_model(model, lora_cfg)
+
+    adapter_dir = Path(OUTPUT_DIR)
+    if LOAD_EXISTING_ADAPTER and adapter_artifacts_present(adapter_dir):
+        print(f"🔁 LOAD_EXISTING_ADAPTER=1 → wczytuję LoRA z {adapter_dir}")
+        model = PeftModel.from_pretrained(
+            model,
+            adapter_dir,
+            is_trainable=True,
+        )
+    else:
+        if LOAD_EXISTING_ADAPTER:
+            print(f"⚠️ LOAD_EXISTING_ADAPTER=1, ale w {adapter_dir} nie znaleziono plików adaptera – start od zera.")
+        else:
+            print("🆕 Tworzę nową LoRA (LOAD_EXISTING_ADAPTER=0).")
+
     model.print_trainable_parameters()
 
     # -------------------------
