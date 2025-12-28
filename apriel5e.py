@@ -1,4 +1,4 @@
-def gradient_stability_probe(model, dataset):
+def gradient_stability_probe(model, dataset, collator):
     if GRAD_PROBE_STEPS <= 0:
         return
     probe_samples = min(len(dataset), GRAD_PROBE_STEPS * BATCH_SIZE * max(1, GRAD_ACCUM))
@@ -25,7 +25,7 @@ def gradient_stability_probe(model, dataset):
         model=model,
         args=probe_args,
         train_dataset=subset,
-        data_collator=data_collator,
+        data_collator=collator,
     )
     probe_trainer.train()
     del probe_trainer
@@ -856,7 +856,7 @@ def main():
     # -------------------------
     # Optional gradient probe
     # -------------------------
-    gradient_stability_probe(model, tokenized)
+    gradient_stability_probe(model, tokenized, data_collator)
 
     # -------------------------
     # Train!
