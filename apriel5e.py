@@ -231,7 +231,7 @@ EPOCH_PRESETS = {
     "epoch1": {
         "phase": "basic",
         "dataset": "train_test_dataset/normalized/basic.json",
-        "learning_rate": 3e-6,  # Ultra-bezpieczny LR
+        "learning_rate": 5e-6,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
@@ -245,14 +245,14 @@ EPOCH_PRESETS = {
     "epoch3": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 8e-6,  # Delikatnie wyższy po stabilnych basic epokach
+        "learning_rate": 5e-6,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch4": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 8e-6,
+        "learning_rate": 8e-6,  # Delikatnie wyższy po epoch3
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
@@ -312,39 +312,27 @@ PHASE_CONFIG = {
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
-        "lr": 1e-5,
+        "lr": 5e-6,
         "max_grad_norm": 1.0,
         "target_modules": ["lm_head"],
     },
     "grammar": {
         "max_length": 384,
         "batch_size": 2,
-        "grad_accum": 4,
-        "epochs": 2,
-        "lr": 3e-5,
+        "grad_accum": 8,
+        "epochs": 1,
+        "lr": 5e-6,
         "max_grad_norm": 1.0,
-        "target_modules": [
-            "lm_head",
-            "model.layers.38.self_attn.q_proj",
-            "model.layers.38.self_attn.v_proj",
-            "model.layers.39.self_attn.q_proj",
-            "model.layers.39.self_attn.v_proj",
-        ],
+        "target_modules": ["lm_head"],  # Tylko lm_head dla stabilności
     },
     "advanced": {
         "max_length": 512,
-        "batch_size": 1,
-        "grad_accum": 4,
+        "batch_size": 2,
+        "grad_accum": 8,
         "epochs": 1,
-        "lr": 1e-5,
-        "max_grad_norm": 1.5,
-        "target_modules": [
-            "lm_head",
-            "model.layers.38.self_attn.q_proj",
-            "model.layers.38.self_attn.v_proj",
-            "model.layers.39.self_attn.q_proj",
-            "model.layers.39.self_attn.v_proj",
-        ],
+        "lr": 5e-6,
+        "max_grad_norm": 1.0,
+        "target_modules": ["lm_head"],  # Tylko lm_head dla stabilności
     },
 }
 
@@ -363,7 +351,7 @@ LR = float(
     )
 )
 MAX_GRAD_NORM = float(os.environ.get("MAX_GRAD_NORM", str(PHASE.get("max_grad_norm", 1.0))))
-WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.01"))  # Minimalny warmup
+WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.1"))  # Delikatne rozgrzewanie
 LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "cosine")
 GRAD_PROBE_STEPS = int(os.environ.get("GRAD_PROBE_STEPS", "0"))
 
@@ -385,13 +373,8 @@ LOCAL_DATASET_PATH = _env_dataset or (
     ACTIVE_EPOCH_PRESET["dataset"] if ACTIVE_EPOCH_PRESET else str(DEFAULT_LOCAL_DATASET)
 )
 
-SAFE_TARGET_MODULES = [
-    "lm_head",
-    "model.layers.38.self_attn.q_proj",
-    "model.layers.38.self_attn.v_proj",
-    "model.layers.39.self_attn.q_proj",
-    "model.layers.39.self_attn.v_proj",
-]
+# BEZPIECZNE: Tylko lm_head dla modelu "thinking" - nie modyfikuj self_attn!
+SAFE_TARGET_MODULES = ["lm_head"]
 
 SEED = 42
 
