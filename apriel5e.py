@@ -235,7 +235,8 @@ def adjust_training_for_memory():
 PL_RESPONSE_TOKEN = "<|pl_response|>"
 
 # Default LoRA hyperparams (can be overridden per-epoch or via env)
-DEFAULT_LORA_ALPHA = 16
+LORA_R = 16
+DEFAULT_LORA_ALPHA = 32
 DEFAULT_LORA_DROPOUT = 0.0
 
 # Predefined per-epoch presets (dataset + key hyperparams)
@@ -333,7 +334,7 @@ PHASE_CONFIG = {
         ],
     },
     "grammar": {
-        "max_length": 384,
+        "max_length": 512,
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
@@ -346,7 +347,7 @@ PHASE_CONFIG = {
         ],
     },
     "advanced": {
-        "max_length": 512,
+        "max_length": 768,
         "batch_size": 2,
         "grad_accum": 8,
         "epochs": 1,
@@ -379,7 +380,7 @@ WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.03"))  # 3% warmup
 LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "cosine")  # Cosine scheduler (bezpieczny z MLP)
 GRAD_PROBE_STEPS = int(os.environ.get("GRAD_PROBE_STEPS", "0"))
 
-LORA_R = 4
+
 LORA_ALPHA = float(
     os.environ.get(
         "LORA_ALPHA",
