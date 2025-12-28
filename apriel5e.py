@@ -231,35 +231,35 @@ EPOCH_PRESETS = {
     "epoch1": {
         "phase": "basic",
         "dataset": "train_test_dataset/normalized/basic.json",
-        "learning_rate": 1e-5,  # Bezpieczny LR (probe pokazał stabilność przy 5e-6)
+        "learning_rate": 3e-6,  # Ultra-bezpieczny LR
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch2": {
         "phase": "basic",
         "dataset": "train_test_dataset/normalized/basic.json",
-        "learning_rate": 1e-5,
+        "learning_rate": 5e-6,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch3": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 2e-5,  # Delikatnie wyższy po stabilnych basic epokach
+        "learning_rate": 8e-6,  # Delikatnie wyższy po stabilnych basic epokach
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch4": {
         "phase": "grammar",
         "dataset": "train_test_dataset/normalized/grammar.json",
-        "learning_rate": 2e-5,
+        "learning_rate": 8e-6,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch5": {
         "phase": "advanced",
         "dataset": "train_test_dataset/normalized/advanced.json",
-        "learning_rate": 1e-5,
+        "learning_rate": 5e-6,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
@@ -363,7 +363,7 @@ LR = float(
     )
 )
 MAX_GRAD_NORM = float(os.environ.get("MAX_GRAD_NORM", str(PHASE.get("max_grad_norm", 1.0))))
-WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.05"))
+WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.01"))  # Minimalny warmup
 LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "cosine")
 GRAD_PROBE_STEPS = int(os.environ.get("GRAD_PROBE_STEPS", "0"))
 
