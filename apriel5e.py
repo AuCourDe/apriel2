@@ -230,35 +230,35 @@ DEFAULT_LORA_DROPOUT = 0.0
 EPOCH_PRESETS = {
     "epoch1": {
         "phase": "basic",
-        "dataset": "train_test_dataset/epoch_splits/epoch1_basic.json",
-        "learning_rate": 5e-5,
+        "dataset": "train_test_dataset/normalized/basic.json",
+        "learning_rate": 1e-5,  # Bezpieczny LR (probe pokazał stabilność przy 5e-6)
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch2": {
         "phase": "basic",
-        "dataset": "train_test_dataset/epoch_splits/epoch2_basic.json",
-        "learning_rate": 5e-5,
+        "dataset": "train_test_dataset/normalized/basic.json",
+        "learning_rate": 1e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch3": {
         "phase": "grammar",
-        "dataset": "train_test_dataset/epoch_splits/epoch3_grammar.json",
-        "learning_rate": 3e-5,
+        "dataset": "train_test_dataset/normalized/grammar.json",
+        "learning_rate": 2e-5,  # Delikatnie wyższy po stabilnych basic epokach
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch4": {
         "phase": "grammar",
-        "dataset": "train_test_dataset/epoch_splits/epoch4_grammar.json",
-        "learning_rate": 3e-5,
+        "dataset": "train_test_dataset/normalized/grammar.json",
+        "learning_rate": 2e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
     },
     "epoch5": {
         "phase": "advanced",
-        "dataset": "train_test_dataset/epoch_splits/epoch5_advanced.json",
+        "dataset": "train_test_dataset/normalized/advanced.json",
         "learning_rate": 1e-5,
         "lora_alpha": DEFAULT_LORA_ALPHA,
         "lora_dropout": DEFAULT_LORA_DROPOUT,
