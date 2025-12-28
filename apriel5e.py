@@ -1,3 +1,35 @@
+def gradient_stability_probe(model, dataset):
+    if GRAD_PROBE_STEPS <= 0:
+        return
+    probe_samples = min(len(dataset), GRAD_PROBE_STEPS * BATCH_SIZE * max(1, GRAD_ACCUM))
+    subset = dataset.select(range(probe_samples))
+    print(f"🧪 Gradient probe: {GRAD_PROBE_STEPS} steps on {probe_samples} samples (LR={LR*0.1:.2e})")
+    probe_args = TrainingArguments(
+        output_dir=str(Path(OUTPUT_DIR) / "grad_probe"),
+        per_device_train_batch_size=BATCH_SIZE,
+        gradient_accumulation_steps=GRAD_ACCUM,
+        max_steps=GRAD_PROBE_STEPS,
+        learning_rate=LR * 0.1,
+        warmup_ratio=0.0,
+        lr_scheduler_type=LR_SCHEDULER,
+        logging_steps=1,
+        save_steps=GRAD_PROBE_STEPS + 1,
+        report_to="none",
+        fp16=True,
+        bf16=False,
+        optim="paged_adamw_8bit",
+        max_grad_norm=MAX_GRAD_NORM,
+        seed=SEED,
+    )
+    probe_trainer = Trainer(
+        model=model,
+        args=probe_args,
+        train_dataset=subset,
+        data_collator=data_collator,
+    )
+    probe_trainer.train()
+    del probe_trainer
+
 #!/usr/bin/env python3
 """
 APRIEL-1.6-15B THINKER — POLISH QLoRA TRAINING (ETAP 2, AGGRESSIVE LORA, 12GB VRAM)
@@ -277,10 +309,11 @@ if HF_LORA_REPO and not HF_TOKEN:
 PHASE_CONFIG = {
     "basic": {
         "max_length": 256,
-        "batch_size": 4,
-        "grad_accum": 4,
-        "epochs": 2,
-        "lr": 5e-5,
+        "batch_size": 2,
+        "grad_accum": 8,
+        "epochs": 1,
+        "lr": 1e-5,
+        "max_grad_norm": 1.0,
         "target_modules": ["lm_head"],
     },
     "grammar": {
@@ -289,6 +322,7 @@ PHASE_CONFIG = {
         "grad_accum": 4,
         "epochs": 2,
         "lr": 3e-5,
+        "max_grad_norm": 1.0,
         "target_modules": [
             "lm_head",
             "model.layers.38.self_attn.q_proj",
@@ -303,6 +337,7 @@ PHASE_CONFIG = {
         "grad_accum": 4,
         "epochs": 1,
         "lr": 1e-5,
+        "max_grad_norm": 1.5,
         "target_modules": [
             "lm_head",
             "model.layers.38.self_attn.q_proj",
@@ -327,6 +362,10 @@ LR = float(
         str(ACTIVE_EPOCH_PRESET["learning_rate"] if ACTIVE_EPOCH_PRESET else PHASE["lr"]),
     )
 )
+MAX_GRAD_NORM = float(os.environ.get("MAX_GRAD_NORM", str(PHASE.get("max_grad_norm", 1.0))))
+WARMUP_RATIO = float(os.environ.get("WARMUP_RATIO", "0.05"))
+LR_SCHEDULER = os.environ.get("LR_SCHEDULER", "cosine")
+GRAD_PROBE_STEPS = int(os.environ.get("GRAD_PROBE_STEPS", "0"))
 
 LORA_R = 4
 LORA_ALPHA = float(
@@ -504,7 +543,10 @@ def load_dataset_jsonl(path: str) -> Dataset:
         if "instruction" in ex and "response" in ex:
             instruction = ex["instruction"].strip()
             response = ex["response"].strip()
-            prefixed_instruction = f"{PL_RESPONSE_TOKEN}{instruction}"
+            if instruction.startswith(PL_RESPONSE_TOKEN):
+                prefixed_instruction = instruction
+            else:
+                prefixed_instruction = f"{PL_RESPONSE_TOKEN}{instruction}"
             rows.append({
                 "text": f"{prefixed_instruction}\n\n{response}"
             })
@@ -774,15 +816,15 @@ def main():
         gradient_accumulation_steps=GRAD_ACCUM,
         num_train_epochs=EPOCHS,
         learning_rate=LR,
-        warmup_ratio=0.1,
-        lr_scheduler_type="cosine",
+        warmup_ratio=WARMUP_RATIO,
+        lr_scheduler_type=LR_SCHEDULER,
         logging_steps=10,
         save_steps=100,
         save_total_limit=2,
         bf16=False,
         fp16=True,
         optim="paged_adamw_8bit",
-        max_grad_norm=0.1,
+        max_grad_norm=MAX_GRAD_NORM,
         weight_decay=0.01,
         report_to="none",
         seed=SEED,
@@ -810,6 +852,11 @@ def main():
         data_collator=data_collator,
         callbacks=[HfLoraUploadCallback(HF_LORA_REPO, HF_TOKEN)],
     )
+
+    # -------------------------
+    # Optional gradient probe
+    # -------------------------
+    gradient_stability_probe(model, tokenized)
 
     # -------------------------
     # Train!
