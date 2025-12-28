@@ -1,0 +1,26 @@
+# Apriel-PL QLoRA Training Requirements
+# =====================================
+
+# Core ML frameworks
+torch>=2.1.0
+transformers>=4.36.0
+datasets>=2.16.0
+
+# QLoRA / PEFT
+peft>=0.7.0
+bitsandbytes>=0.41.0
+
+# Training utilities
+accelerate>=0.25.0
+scipy>=1.11.0
+
+# Export utilities
+openpyxl>=3.1.2
+
+# Optional: monitoring (uncomment if needed)
+# wandb>=0.16.0
+# tensorboard>=2.15.0
+
+# Utilities
+tqdm>=4.66.0
+safetensors>=0.4.0
