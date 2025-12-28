@@ -314,7 +314,7 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 2e-5,  # Wyższy LR dla MLP (stabilniejsze niż lm_head)
         "max_grad_norm": 1.0,
-        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
+        "target_modules": ["lm_head"],
     },
     "grammar": {
         "max_length": 384,
@@ -323,7 +323,7 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 3e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
+        "target_modules": ["lm_head"],
     },
     "advanced": {
         "max_length": 512,
@@ -332,7 +332,7 @@ PHASE_CONFIG = {
         "epochs": 1,
         "lr": 2e-5,
         "max_grad_norm": 1.0,
-        "target_modules": ["model.layers.39.mlp.gate_proj", "model.layers.39.mlp.up_proj", "model.layers.39.mlp.down_proj"],
+        "target_modules": ["lm_head"],
     },
 }
 
@@ -373,13 +373,9 @@ LOCAL_DATASET_PATH = _env_dataset or (
     ACTIVE_EPOCH_PRESET["dataset"] if ACTIVE_EPOCH_PRESET else str(DEFAULT_LOCAL_DATASET)
 )
 
-# BEZPIECZNE: MLP w ostatniej warstwie (nie lm_head - jest powiązany z embeddingami!)
-# Dla modelu 40-warstwowego używamy warstwy 39 (ostatniej)
-SAFE_TARGET_MODULES = [
-    "model.layers.39.mlp.gate_proj",
-    "model.layers.39.mlp.up_proj",
-    "model.layers.39.mlp.down_proj",
-]
+# BEZPIECZNE: lm_head z wyłączeniem embedding layer flag
+# Dla vision-language model używamy pełnej ścieżki
+SAFE_TARGET_MODULES = ["lm_head"]
 
 SEED = 42
 
